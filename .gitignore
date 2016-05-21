@@ -1,0 +1,9 @@
+pkg/
+bin/
+.vscode/
+.idea/
+src/github.com/agent/test/debug
+!src/github.com/agent/
+
+
+
