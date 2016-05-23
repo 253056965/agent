@@ -32,8 +32,8 @@ func (s *IOSession) GetID() string {
 func (s *IOSession) String() string {
 	return s.sessionID
 }
-func (s *IOSession)setProtocolOutputFactory(protocolOutputFactory *ProtocolOutputFactory)   {
-	s.protocolOutputFactory=protocolOutputFactory;
+func (s *IOSession) setProtocolOutputFactory(protocolOutputFactory *ProtocolOutputFactory) {
+	s.protocolOutputFactory = protocolOutputFactory
 }
 
 func (s *IOSession) GetRemoteAddr() net.Addr {
