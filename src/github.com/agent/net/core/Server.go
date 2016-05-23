@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/agent/util"
 	"net"
 	"strconv"
+
+	"github.com/agent/util"
 )
 
 //Server 服务的开启都需要这个类
@@ -13,34 +14,34 @@ type Server struct {
 	ioHandler            IoHandler            // 用户自己定义的处理对象
 	protocolCodecFactory ProtocolCodecFactory // 编解码工厂
 }
-//NewServer 创建一个server
+
+//NewServer2 创建一个server
 func NewServer2(ip string, port int, ioHandler IoHandler, protocolCodecFactory ProtocolCodecFactory) *Server {
-    
+
 	return &Server{ip, port, ioHandler, protocolCodecFactory}
 }
+
 //NewServer 创建一个server
 func NewServer(port int, ioHandler IoHandler, protocolCodecFactory ProtocolCodecFactory) *Server {
-	return NewServer2("127.0.0.1",port,ioHandler,protocolCodecFactory);
+	return NewServer2("127.0.0.1", port, ioHandler, protocolCodecFactory)
 }
 
-
 func (s *Server) handler(conn net.Conn) {
-   
-	session := NewIOSession(conn,s.protocolCodecFactory)
-	s.ioHandler.SessionCreated(session);
+	session := NewIOSession(conn, s.protocolCodecFactory, s.ioHandler)
+	s.ioHandler.SessionCreated(session)
 	protocolDecoderOutput := NewProtocolDecoderOutputImpl()
 	// 启动解码数据携程
 	go protocolDecoderOutput.flush(s.ioHandler, session)
 	protocolEncoderOutput := NewProtocolEncoderOutputImpl()
 	// 启动编码数据的携程
 	go protocolEncoderOutput.flush(s.ioHandler, session)
-    session.setProtocolOutputFactory(newProtocolOutputFactory(protocolDecoderOutput,protocolEncoderOutput))
-	
-	
-	 s.ioHandler.SessionOpened(session);
-	
+	session.setProtocolOutputFactory(newProtocolOutputFactory(protocolDecoderOutput, protocolEncoderOutput))
+
+	s.ioHandler.SessionOpened(session)
+
 	for {
 		result, err := s.protocolCodecFactory.GetProtobuDecoder().Decoder(session, session.GetIoBuffer(), protocolDecoderOutput)
+		session.SetlastReaderIdleTime()
 		if checkError(err, "Connection") == false {
 			s.ioHandler.SessionClosed(session)
 			session.Close()
@@ -68,9 +69,9 @@ func (s *Server) StartServer() error {
 	if !checkError(err, "ListenTCP") {
 		return err
 	}
-    
-    logger.Infof("startServer:[%s:%d]",s.ip,s.port);
-    
+
+	logger.Infof("startServer:[%s:%d]", s.ip, s.port)
+
 	for {
 		logger.Infoln("Listening...")
 		conn, err := l.Accept()
