@@ -18,6 +18,7 @@ func NewTelnetHandler() *TelnetHandler {
 }
 
 func (t *TelnetHandler) SessionOpened(session *core.IOSession) {
+	t.log.Infoln("session 被打开了:", session)
 	// 设置读写超时设置
 	session.SetIdleTime(time.Second * 30)
 }
@@ -32,6 +33,7 @@ func (t *TelnetHandler) SessionClosed(session *core.IOSession) {
 
 func (t *TelnetHandler) SessionIdle(session *core.IOSession, idle *core.IdleStatus) {
 	t.log.Errorln("超时被触发了", idle)
+	session.Close()
 }
 
 func (t *TelnetHandler) MessageSent(session *core.IOSession, message interface{}) {

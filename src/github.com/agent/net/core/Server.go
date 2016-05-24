@@ -43,17 +43,15 @@ func (s *Server) handler(conn net.Conn) {
 		result, err := s.protocolCodecFactory.GetProtobuDecoder().Decoder(session, session.GetIoBuffer(), protocolDecoderOutput)
 		session.SetlastReaderIdleTime()
 		if checkError(err, "Connection") == false {
-			s.ioHandler.SessionClosed(session)
 			session.Close()
 			break
 		}
 		if result == false {
 			session.Close()
-			s.ioHandler.SessionClosed(session)
 			break
 		}
 	}
-	s.ioHandler.SessionOpened(session)
+
 }
 
 //StartServer 启动一个服务器

@@ -2,28 +2,27 @@ package main
 
 import (
 	"fmt"
-	"reflect"
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/agent/net/core"
 	"github.com/agent/net/example"
 )
 
 func main() {
-	//test("ddddddddddddddd");
+	go func() {
+		ipprot := "127.0.0.1:6060"
+		fmt.Printf("debug访问:http://%s/debug/pprof/", ipprot)
+		http.ListenAndServe(ipprot, nil)
 
+	}()
 	iohandler := example.NewTelnetHandler()
 	protobufDecoder := example.NewTelnetProtobufDecoder()
 	protobufEncoder := example.NewTelnetProtobufEncoder()
 	protocolCodecFactory := example.NewTelnetProtocolCodecFactory(protobufDecoder, protobufEncoder)
-	server := core.NewServer2("0.0.0.0",8889,  iohandler,protocolCodecFactory)
+	server := core.NewServer2("0.0.0.0", 8889, iohandler, protocolCodecFactory)
 	err := server.StartServer()
 	if err != nil {
 		fmt.Println("程序异常即将推出")
 	}
-	message := []byte(fmt.Sprintf("%v", "obj"))
-	test(message)
-}
-
-func test(mes interface{}) {
-	str := reflect.ValueOf(mes).Bytes()
-	fmt.Println(string(str))
 }

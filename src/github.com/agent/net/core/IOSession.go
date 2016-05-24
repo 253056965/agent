@@ -44,7 +44,7 @@ func (s *IOSession) SetlastWriterIdleTime() {
 
 //ToString 格式化对象的方法
 func (s *IOSession) String() string {
-	return s.sessionID
+	return "当前sessionId:" + s.sessionID
 }
 func (s *IOSession) setProtocolOutputFactory(protocolOutputFactory *ProtocolOutputFactory) {
 	s.protocolOutputFactory = protocolOutputFactory
