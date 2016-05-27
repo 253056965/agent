@@ -70,6 +70,9 @@ func (s *Server) StartServer() error {
 
 	logger.Infof("startServer:[%s:%d]", s.ip, s.port)
 
+	// 开启session 的定时任务 主要是针对超做的限制
+	StartSessionJob()
+
 	for {
 		logger.Infoln("Listening...")
 		conn, err := l.Accept()

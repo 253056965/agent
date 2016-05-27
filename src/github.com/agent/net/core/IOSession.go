@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/agent/util"
+	"gopkg.in/robfig/cron.v2"
 )
 
 var in64 int64
@@ -23,8 +26,9 @@ type IOSession struct {
 	protocolCodecFactory  ProtocolCodecFactory // 编码输出流
 	protocolOutputFactory *ProtocolOutputFactory
 	ioHandler             IoHandler    // 对方处理方法
-	ticker                *time.Ticker // 接受对象
+	tickID                cron.EntryID // 定时任务的ID
 	timeOut               int64        // 超时时间设置
+	log                   *util.Logger // 日志对象
 }
 
 //GetID 获取sessionId
@@ -59,7 +63,7 @@ func (s *IOSession) GetRemoteAddr() net.Addr {
 func (s *IOSession) Close() {
 	if s.isConnection {
 		s.isConnection = false
-		s.ticker.Stop()
+		RemoveSessionJob(s.tickID)
 		s.conn.Close()
 		go s.ioHandler.SessionClosed(s)
 	}
@@ -86,51 +90,47 @@ func (s *IOSession) Write(mesg interface{}) error {
 }
 
 //此方法是超时检测
-func (s *IOSession) timeOutTesting() {
-	go func() {
-		for _ = range s.ticker.C {
-			now := time.Now().Unix()
-			rt := now - s.lastReaderIdleTime
-			wt := now - s.lastWriterIdleTime
+func (s *IOSession) timeOutTesting(duration time.Duration) {
+	var err error
+	s.tickID, err = AddSessionJobForDuration(duration, func() {
+		now := time.Now().Unix()
+		rt := now - s.lastReaderIdleTime
+		wt := now - s.lastWriterIdleTime
+		s.log.Infoln("最后一次读取时间为", time.Unix(s.lastReaderIdleTime, 0).Format("2006-01-02 15:04:05"))
+		s.log.Infoln("最后一次写时间为", time.Unix(s.lastWriterIdleTime, 0).Format("2006-01-02 15:04:05"))
+		if rt >= s.timeOut && wt >= s.timeOut {
+			// 两者都超时了
+			s.ioHandler.SessionIdle(s, BOTH_IDLE)
 
-			if rt >= s.timeOut && wt >= s.timeOut {
-				// 两者都超时了
-				s.ioHandler.SessionIdle(s, BOTH_IDLE)
-				continue
-			}
-
-			if rt >= s.timeOut {
-				// 读超时
-				s.ioHandler.SessionIdle(s, READER_IDLE)
-				continue
-			}
-
-			if wt >= s.timeOut {
-				// 写超时
-				s.ioHandler.SessionIdle(s, WRITER_IDLE)
-				continue
-			}
-			//fmt.Printf("ticked at %v", time.Now())
 		}
-	}()
+
+		if rt >= s.timeOut {
+			// 读超时
+			s.ioHandler.SessionIdle(s, READER_IDLE)
+
+		}
+		if wt >= s.timeOut {
+			// 写超时
+			s.ioHandler.SessionIdle(s, WRITER_IDLE)
+
+		}
+	})
+	if err != nil {
+
+	}
 }
 
 //SetIdleTime 设置超时设置
-func (s *IOSession) SetIdleTime(idleTime time.Duration) {
-	if s.ticker != nil {
-		s.ticker.Stop()
-	}
-	if idleTime <= 0 {
-		return
-	}
-	s.ticker = time.NewTicker(idleTime)
-	s.timeOutTesting()
+func (s *IOSession) SetIdleTime(timeOut time.Duration) {
+	s.timeOut = timeOut.Nanoseconds() / 1000
+	s.timeOutTesting(timeOut)
 }
 
 //NewIOSession 得到一个IOSession 的是实例
 func NewIOSession(conn net.Conn, protocolCodecFactory ProtocolCodecFactory, ioHandler IoHandler) *IOSession {
 	ioBuffer := NewIoBuffer(conn)
 	sessionID := strconv.FormatInt(atomic.AddInt64(&in64, 1), 10)
-	iosession := &IOSession{sessionID: sessionID, conn: conn, isConnection: true, ioBuffer: ioBuffer, lastReaderIdleTime: time.Now().Unix(), lastWriterIdleTime: time.Now().Unix(), protocolCodecFactory: protocolCodecFactory, ioHandler: ioHandler}
+	log := util.NewLogger()
+	iosession := &IOSession{sessionID: sessionID, conn: conn, isConnection: true, ioBuffer: ioBuffer, lastReaderIdleTime: time.Now().Unix(), lastWriterIdleTime: time.Now().Unix(), protocolCodecFactory: protocolCodecFactory, ioHandler: ioHandler, log: log}
 	return iosession
 }
