@@ -25,15 +25,34 @@ type IOSession struct {
 	ioBuffer              *IoBuffer            // 用来读写数据的
 	protocolCodecFactory  ProtocolCodecFactory // 编码输出流
 	protocolOutputFactory *ProtocolOutputFactory
-	ioHandler             IoHandler    // 对方处理方法
-	tickID                cron.EntryID // 定时任务的ID
-	timeOut               int64        // 超时时间设置
-	log                   *util.Logger // 日志对象
+	ioHandler             IoHandler              // 对方处理方法
+	tickID                cron.EntryID           // 定时任务的ID
+	timeOut               int64                  // 超时时间设置
+	log                   *util.Logger           // 日志对象
+	dataMap               map[string]interface{} // 用来保存对象值的
 }
 
 //GetID 获取sessionId
 func (s *IOSession) GetID() string {
 	return s.sessionID
+}
+
+// PutUserDate 保存用户的数据
+func (s *IOSession) PutUserDate(key string, obj interface{}) {
+	s.dataMap[key] = obj
+}
+
+// RemoveUserDate 删除用户的数据
+func (s *IOSession) RemoveUserDate(key string) {
+	if _, ok := s.dataMap[key]; ok {
+		delete(s.dataMap, key)
+	}
+}
+
+//GetUserDate 获取用户设置的数据 第二个返回值表示有值还是没值
+func (s *IOSession) GetUserDate(key string) (interface{}, bool) {
+	result, ok := s.dataMap[key]
+	return result, ok
 }
 
 //SetlastReaderIdleTime 设置读的超时时间
@@ -129,6 +148,7 @@ func NewIOSession(conn net.Conn, protocolCodecFactory ProtocolCodecFactory, ioHa
 	ioBuffer := NewIoBuffer(conn)
 	sessionID := strconv.FormatInt(atomic.AddInt64(&in64, 1), 10)
 	log := util.NewLogger()
-	iosession := &IOSession{sessionID: sessionID, conn: conn, isConnection: true, ioBuffer: ioBuffer, lastReaderIdleTime: time.Now().Unix(), lastWriterIdleTime: time.Now().Unix(), protocolCodecFactory: protocolCodecFactory, ioHandler: ioHandler, log: log}
+	dataMap := make(map[string]interface{}, 10)
+	iosession := &IOSession{sessionID: sessionID, conn: conn, isConnection: true, ioBuffer: ioBuffer, lastReaderIdleTime: time.Now().Unix(), lastWriterIdleTime: time.Now().Unix(), protocolCodecFactory: protocolCodecFactory, ioHandler: ioHandler, log: log, dataMap: dataMap}
 	return iosession
 }
