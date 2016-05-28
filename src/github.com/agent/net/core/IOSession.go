@@ -96,8 +96,6 @@ func (s *IOSession) timeOutTesting(duration time.Duration) {
 		now := time.Now().Unix()
 		rt := now - s.lastReaderIdleTime
 		wt := now - s.lastWriterIdleTime
-		s.log.Infoln("最后一次读取时间为", time.Unix(s.lastReaderIdleTime, 0).Format("2006-01-02 15:04:05"))
-		s.log.Infoln("最后一次写时间为", time.Unix(s.lastWriterIdleTime, 0).Format("2006-01-02 15:04:05"))
 		if rt >= s.timeOut && wt >= s.timeOut {
 			// 两者都超时了
 			s.ioHandler.SessionIdle(s, BOTH_IDLE)
@@ -122,7 +120,7 @@ func (s *IOSession) timeOutTesting(duration time.Duration) {
 
 //SetIdleTime 设置超时设置
 func (s *IOSession) SetIdleTime(timeOut time.Duration) {
-	s.timeOut = timeOut.Nanoseconds() / 1000
+	s.timeOut = timeOut.Nanoseconds() / 1000 / 1000 / 1000
 	s.timeOutTesting(timeOut)
 }
 

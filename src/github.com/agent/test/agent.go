@@ -13,7 +13,13 @@ func main() {
 	//jobrunner.Start()
 
 	//cront := cron.New()
+	// log := util.NewLogger()
 
+	// mainCron := cron.New()
+	// mainCron.Start()
+	// mainCron.Schedule(cron.Every(time.Second*10), newJobs(func() {
+	// 	log.Infoln("ddddddddddd")
+	// }))
 	// jobrunner.Schedule("@every 5s", ReminderEmails{})
 	// jobrunner.Schedule("@every 5s", ReminderEmails{})
 	// jobrunner.Schedule("@every 5s", ReminderEmails{})
@@ -32,15 +38,4 @@ func main() {
 	if err != nil {
 		fmt.Println("程序异常即将推出")
 	}
-}
-
-type ReminderEmails struct {
-	// filtered
-}
-
-// ReminderEmails.Run() will get triggered automatically.
-func (e ReminderEmails) Run() {
-	// Queries the DB
-	// Sends some email
-	fmt.Printf("Every 5 sec send reminder emails \n")
 }
