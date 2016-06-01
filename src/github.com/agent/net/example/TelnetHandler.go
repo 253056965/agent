@@ -21,6 +21,7 @@ func (t *TelnetHandler) SessionOpened(session *core.IOSession) {
 	t.log.Infoln("session 被打开了:", session)
 	// 设置读写超时设置
 	session.SetIdleTime(time.Second * 30)
+	session.Write("我第一次用程序给你发代码\r\n")
 }
 
 func (t *TelnetHandler) SessionCreated(session *core.IOSession) {
@@ -43,5 +44,5 @@ func (t *TelnetHandler) MessageReceived(session *core.IOSession, message interfa
 
 	str := reflect.ValueOf(message).String()
 	t.log.Infof("客户端发送的消息是:%s", str)
-	session.Write("我收到你的消息了:" + str + "\r\n")
+	//session.Write("我收到你的消息了:" + str + "\r\n")
 }
